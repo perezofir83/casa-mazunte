@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Environment variables - NEVER commit these
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Database files (local SQLite)
+*.db
+*.db-journal
+prisma/*.db
+prisma/*.db-journal
+
+# Build output
+dist/
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Uploads (local image storage)
+uploads/
+!uploads/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Chrome Extension build
+packages/chrome-extension/dist/
