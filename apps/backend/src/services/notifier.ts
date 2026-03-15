@@ -44,7 +44,7 @@ class UltramsgProvider implements WhatsAppProvider {
       throw new Error(`Ultramsg send failed: ${response.status} ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as { id?: string; sent?: string | boolean };
     return { id: data.id || 'unknown', sent: data.sent === 'true' || data.sent === true };
   }
 }
@@ -121,6 +121,53 @@ export async function sendLandlordConfirmation(
   ].join('\n');
 
   await ensureProvider().sendMessage(landlordPhone, message);
+}
+
+/**
+ * Send OTP code to owner via WhatsApp
+ */
+export async function sendOwnerOTP(
+  ownerPhone: string,
+  code: string
+): Promise<void> {
+  const message = [
+    `Tu código de Casa Mazunte: *${code}*`,
+    ``,
+    `Válido por 5 minutos. No lo compartas con nadie.`,
+  ].join('\n');
+
+  await ensureProvider().sendMessage(ownerPhone, message);
+}
+
+/**
+ * Send owner invitation message with link to claim their listing
+ */
+export async function sendOwnerInvitation(
+  ownerPhone: string,
+  listingId: string,
+  siteUrl: string = env.CORS_ORIGIN
+): Promise<void> {
+  const ownerUrl = `${siteUrl}/owner?listing=${listingId}`;
+
+  const message = [
+    `¡Hola! 👋 Encontramos tu propiedad en un grupo de WhatsApp 🏠`,
+    ``,
+    `Queremos invitarte a publicarla *gratis* en Casa Mazunte —`,
+    `la plataforma comunitaria de rentas de la costa oaxaqueña.`,
+    ``,
+    `👉 Entra aquí para reclamar tu propiedad:`,
+    ownerUrl,
+    ``,
+    `Con 2 minutos puedes:`,
+    `✅ Verificar y editar los detalles`,
+    `✅ Subir fotos`,
+    `✅ Elegir fechas disponibles`,
+    `✅ Publicarla para que te contacten directo`,
+    ``,
+    `¡Sin comisiones, 100% gratis! 🌴`,
+  ].join('\n');
+
+  await ensureProvider().sendMessage(ownerPhone, message);
 }
 
 /**

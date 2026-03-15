@@ -20,30 +20,37 @@ datasource db {
 
 /// A rental property listing captured from WhatsApp
 model Listing {
-  id              String   @id @default(uuid())
-  source          String   @default("WHATSAPP_CAPTURE") // WHATSAPP_CAPTURE | ULTRAMSG_INBOUND | MANUAL
-  status          String   @default("PENDING_REVIEW") // PENDING_REVIEW | ACTIVE | EXPIRED | ARCHIVED
-  senderPhoneHash String   @map("sender_phone_hash")
-  senderPhoneEnc  String?  @map("sender_phone_enc")
+  id              String              @id @default(uuid())
+  source          String              @default("WHATSAPP_CAPTURE") // WHATSAPP_CAPTURE | ULTRAMSG_INBOUND | MANUAL
+  status          String              @default("PENDING_REVIEW") // PENDING_REVIEW | ACTIVE | EXPIRED | ARCHIVED
+  senderPhoneHash String              @map("sender_phone_hash")
+  senderPhoneEnc  String?             @map("sender_phone_enc")
   rawText         String
-  parsedData      String?  @map("parsed_data") // JSON string (SQLite doesn't have native JSON)
-  groupName       String?  @map("group_name")
+  parsedData      String?             @map("parsed_data") // JSON string
+  groupName       String?             @map("group_name")
+  // Owner relationship
+  ownerId         String?             @map("owner_id")
+  owner           Owner?              @relation(fields: [ownerId], references: [id])
+  ownerApproved   Boolean             @default(false) @map("owner_approved")
   images          Image[]
   promotion       Promotion?
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  availability    AvailabilityBlock[]
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
 
   @@index([status])
   @@index([createdAt])
+  @@index([ownerId])
   @@map("listings")
 }
 
-/// Image attached to a listing
+/// Image or video attached to a listing
 model Image {
   id         String   @id @default(uuid())
   listingId  String   @map("listing_id")
   url        String
   storageKey String?  @map("storage_key")
+  mediaType  String   @default("image") @map("media_type") // "image" | "video"
   listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now()) @map("created_at")
 
@@ -74,6 +81,47 @@ model Admin {
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("admins")
+}
+
+/// Owner - property landlord who claimed their listing via WhatsApp OTP
+model Owner {
+  id        String    @id @default(uuid())
+  phoneHash String    @unique @map("phone_hash")
+  phoneEnc  String    @map("phone_enc")
+  name      String?
+  createdAt DateTime  @default(now()) @map("created_at")
+  lastLogin DateTime? @map("last_login")
+  listings  Listing[]
+
+  @@map("owners")
+}
+
+/// One-time password for owner authentication via WhatsApp
+model OwnerOTP {
+  id        String   @id @default(uuid())
+  phoneHash String   @map("phone_hash")
+  code      String   // 6-digit code
+  expiresAt DateTime @map("expires_at")
+  attempts  Int      @default(0)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([phoneHash])
+  @@map("owner_otps")
+}
+
+/// Availability block - owner-defined window when the property is available
+model AvailabilityBlock {
+  id        String   @id @default(uuid())
+  listingId String   @map("listing_id")
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  dateFrom  DateTime @map("date_from")
+  dateTo    DateTime @map("date_to")
+  // Enforced in app logic: dateTo - dateFrom >= 14 days
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([listingId])
+  @@map("availability_blocks")
 }
 
 /// Renter notification preferences (for Ultramsg matching)

@@ -11,6 +11,7 @@ import listingsRouter from './routes/listings';
 import captureRouter from './routes/capture';
 import adminRouter from './routes/admin';
 import webhookRouter from './routes/webhook';
+import ownerRouter from './routes/owner';
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use('/api/listings', listingsRouter);
 app.use('/api/capture', captureRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/webhook', webhookRouter);
+app.use('/api/owner', ownerRouter);
 
 // ============================================
 // 404 handler

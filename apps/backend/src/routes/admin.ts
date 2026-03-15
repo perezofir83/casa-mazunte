@@ -12,6 +12,8 @@ import {
   rejectPromotion,
   getPendingPromotions,
 } from '../services/promotionService';
+import { hashPhone, encryptPhone, decryptPhone } from '../services/phoneHasher';
+import { sendOwnerInvitation } from '../services/notifier';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -102,7 +104,7 @@ router.get('/listings', requireAdmin, async (req: AuthRequest, res) => {
  */
 router.patch('/listings/:id', requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { status, parsedData } = req.body;
 
     const updateData: any = {};
@@ -127,7 +129,7 @@ router.patch('/listings/:id', requireAdmin, async (req: AuthRequest, res) => {
  */
 router.delete('/listings/:id', requireAdmin, async (req: AuthRequest, res) => {
   try {
-    await prisma.listing.delete({ where: { id: req.params.id } });
+    await prisma.listing.delete({ where: { id: req.params.id as string } });
     res.json({ success: true, data: { message: 'Listing deleted' } });
   } catch (error) {
     console.error('Admin delete listing error:', error);
@@ -159,7 +161,7 @@ router.get('/promotions', requireAdmin, async (_req, res) => {
  */
 router.post('/promotions/:listingId/approve', requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const { listingId } = req.params;
+    const listingId = req.params.listingId as string;
     await approvePromotion(listingId, req.admin!.id);
 
     res.json({
@@ -178,7 +180,7 @@ router.post('/promotions/:listingId/approve', requireAdmin, async (req: AuthRequ
  */
 router.post('/promotions/:listingId/reject', requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const { listingId } = req.params;
+    const listingId = req.params.listingId as string;
     await rejectPromotion(listingId);
     res.json({ success: true, data: { message: 'Promotion rejected.' } });
   } catch (error) {
@@ -216,6 +218,52 @@ router.get('/stats', requireAdmin, async (_req, res) => {
   } catch (error) {
     console.error('Admin stats error:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch stats' });
+  }
+});
+
+// ============================================
+// Owner Invitation
+// ============================================
+
+/**
+ * POST /api/admin/listings/:id/invite-owner
+ * Links a listing to an owner's phone and sends WhatsApp invitation.
+ */
+router.post('/listings/:id/invite-owner', requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const id = req.params.id as string;
+    const { ownerPhone } = req.body;
+
+    if (!ownerPhone) {
+      res.status(400).json({ success: false, error: 'ownerPhone is required' });
+      return;
+    }
+
+    // Find or create owner
+    const phoneHash = await hashPhone(ownerPhone);
+    const phoneEnc = encryptPhone(ownerPhone);
+
+    let owner = await prisma.owner.findUnique({ where: { phoneHash } });
+    if (!owner) {
+      owner = await prisma.owner.create({ data: { phoneHash, phoneEnc } });
+    }
+
+    // Link owner to listing
+    const listing = await prisma.listing.update({
+      where: { id },
+      data: { ownerId: owner.id },
+    });
+
+    // Send WhatsApp invitation
+    await sendOwnerInvitation(ownerPhone, id);
+
+    res.json({
+      success: true,
+      data: { message: 'Invitación enviada', ownerId: owner.id },
+    });
+  } catch (error) {
+    console.error('Invite owner error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send invitation' });
   }
 });
 
