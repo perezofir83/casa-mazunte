@@ -21,6 +21,7 @@ export const helmetConfig = helmet({
     },
   },
   crossOriginEmbedderPolicy: false, // Allow images from external sources
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow frontend to load uploaded images
 });
 
 /**

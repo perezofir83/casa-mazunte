@@ -158,12 +158,12 @@ export default function ListingDetailPage() {
       <hr className="section-divider" />
 
       {/* Beds */}
-      {p.beds.length > 0 && (
+      {(p.beds?.length ?? 0) > 0 && (
         <>
           <div className="py-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Donde dormiras</h2>
             <div className="flex gap-4 overflow-x-auto pb-2">
-              {p.beds.map((bed, i) => (
+              {(p.beds ?? []).map((bed, i) => (
                 <div key={i} className="flex-shrink-0 border border-gray-200 rounded-xl p-4 min-w-[160px]">
                   <p className="font-medium text-sm text-gray-900">{bed.room || `Espacio ${i + 1}`}</p>
                   <p className="text-sm text-gray-500 mt-1">{bed.type.replace(/_/g, ' ')}</p>
@@ -178,9 +178,9 @@ export default function ListingDetailPage() {
       {/* Amenities */}
       <div className="py-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Lo que ofrece este lugar</h2>
-        {p.amenities.length > 0 ? (
+        {(p.amenities?.length ?? 0) > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {p.amenities.map((a) => (
+            {(p.amenities ?? []).map((a) => (
               <div key={a} className="flex items-center gap-3 text-base text-gray-600">
                 <span>{formatAmenity(a)}</span>
               </div>
@@ -190,11 +190,11 @@ export default function ListingDetailPage() {
           <p className="text-sm text-gray-400">No especificado</p>
         )}
 
-        {p.missing_amenities_common.length > 0 && (
+        {(p.missing_amenities_common?.length ?? 0) > 0 && (
           <div className="mt-6">
             <h3 className="text-sm font-medium text-gray-500 mb-3">No mencionado (pregunta al propietario)</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {p.missing_amenities_common.map((a) => (
+              {(p.missing_amenities_common ?? []).map((a) => (
                 <div key={a} className="flex items-center gap-3 text-base text-gray-400 line-through">
                   <span>{formatAmenity(a)}</span>
                 </div>
@@ -207,12 +207,12 @@ export default function ListingDetailPage() {
       <hr className="section-divider" />
 
       {/* Quality notes */}
-      {p.quality_notes.length > 0 && (
+      {(p.quality_notes?.length ?? 0) > 0 && (
         <>
           <div className="py-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Cosas que debes saber</h2>
             <ul className="space-y-2">
-              {p.quality_notes.map((note, i) => (
+              {(p.quality_notes ?? []).map((note, i) => (
                 <li key={i} className="text-base text-gray-600 flex items-start gap-2">
                   <span className="text-gray-400 mt-0.5">&ndash;</span>
                   {note}
